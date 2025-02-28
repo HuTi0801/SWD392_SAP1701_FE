@@ -2,37 +2,42 @@ import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './index.css'
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+
+// Pages import
+// ------------ Student Pages ----------------
+import HomeStudent from './Pages/StudentPages/HomeStudent';
+import ProjectManagement from './Pages/StudentPages/ProjectManagement';
+import ProjectDetails from './Pages/StudentPages/ProjectDetails';
+import DeadlineStudent from './Pages/StudentPages/DeadlineStudent';
+import WalletStudent from './Pages/StudentPages/WalletStudent';
+import AppointmentManagement from './Pages/StudentPages/AppointmentManagement';
+import BookMentor from './Pages/StudentPages/BookMentor';
+import StudentInfo from './Pages/StudentPages/StudentInfo';
+// -------------------------------------------
+
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-red-500">
-      <div className="flex space-x-4">
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="h-16 w-16" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="h-16 w-16" alt="React logo" />
-        </a>
+    <Router>
+      <div className="App">
+        <Routes>
+
+          // -------- Student Pages -------------------
+          <Route path="/" element={<HomeStudent />} />
+          <Route path="/project-management" element={<ProjectManagement />} />
+          <Route path="project-details" element={<ProjectDetails />}/>
+          <Route path="deadline-student" element={<DeadlineStudent />}/>
+          <Route path="wallet-student" element={<WalletStudent />}/>
+          <Route path="appointment-management" element={<AppointmentManagement />}/>
+          <Route path="book-mentor" element={<BookMentor />}/>
+          <Route path="student-info" element={<StudentInfo />}/>
+          // -------------------------------------------
+          
+        </Routes>
       </div>
-      <h1 className="text-4xl font-bold mt-8 text-blue-500">Vite + React</h1>
-      <div className="card mt-4 p-4 bg-white shadow-md rounded-lg">
-        <button
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          count is {count}
-        </button>
-        <p className="mt-4 text-blue-500">
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs mt-4 text-blue-500">
-        Click on the Vite and React logos to learn more
-      </p>
-    </div>
-  )
+    </Router>
+  );
 }
 
 export default App

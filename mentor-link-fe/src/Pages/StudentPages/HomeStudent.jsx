@@ -1,7 +1,29 @@
-import React from 'react';
+import React, {useState, useEffect} from 'react';
 import { Header, Sidebar, NotificationPanel, Footer, InfoCard, DeadlineItem } from '../../components/ui/StudentUi.jsx';
+import * as projectApi from '../../api/projectApi.js';
 
 const HomeStudent = () => {
+    const [projects, setProjects] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        const fetchProjects = async () => {
+            setLoading(true);
+            try {
+                const data = await projectApi.getAllProjects();
+                console.log(data.data);
+                setProjects(data);
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProjects();
+    }, []);
+    
     return (
         <div className="min-h-screen bg-orange-50">
             <Header />

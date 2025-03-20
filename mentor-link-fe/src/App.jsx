@@ -3,6 +3,9 @@ import './index.css'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 
 // Pages import
+// Guest Pages
+import Login from './Pages/GuestPages/Login';
+
 // ------------ Student Pages ----------------
 import HomeStudent from './Pages/StudentPages/HomeStudent';
 import ProjectManagement from './Pages/StudentPages/ProjectManagement';
@@ -20,7 +23,7 @@ function App() {
     <Router>
       <div className="App">
         <Routes>
-
+          <Route path="/login" element={<Login />} />
           // -------- Student Pages -------------------
           <Route path="/" element={<HomeStudent />} />
           <Route path="/project-management" element={<ProjectManagement />} />

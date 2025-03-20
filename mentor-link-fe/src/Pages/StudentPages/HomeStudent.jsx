@@ -1,21 +1,20 @@
 import React, {useState, useEffect} from 'react';
 import { Header, Sidebar, NotificationPanel, Footer, InfoCard, DeadlineItem } from '../../components/ui/StudentUi.jsx';
-import * as projectApi from '../../api/projectApi.js';
+import * as mentorApi from '../../api/mentorApi.js';
 
 const HomeStudent = () => {
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
 
     useEffect(() => {
         const fetchProjects = async () => {
             setLoading(true);
             try {
-                const data = await projectApi.getAllProjects();
-                console.log(data.data);
+                const data = await mentorApi.mentorSearch();
+                console.log(data.result);
                 setProjects(data);
             } catch (err) {
-                setError(err.message);
+                console.log(err.message);
             } finally {
                 setLoading(false);
             }

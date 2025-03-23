@@ -45,7 +45,7 @@ const HomeStudent = () => {
         <div className="mt-4 flex bg-white shadow-lg p-4">
             <img
                 className="w-1/3 object-cover rounded-lg"
-                src={project.imageUrl || "https://placehold.co/300x200"}
+                src={"/fpt_logo_rect.png"}
                 alt={project.topic || "Project Preview"}
             />
             <div className="flex-1 ml-4">

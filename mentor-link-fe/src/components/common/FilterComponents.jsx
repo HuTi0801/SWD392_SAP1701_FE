@@ -37,7 +37,7 @@ const SearchBar = ({ value, onChange }) => (
             type="text"
             value={value}
             onChange={onChange}
-            placeholder="Search mentors..."
+            placeholder="Search"
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent"
         />
     </div>

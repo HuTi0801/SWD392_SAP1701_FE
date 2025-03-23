@@ -1,28 +1,186 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { useParams } from 'react-router-dom';
+import { viewMentorDetails } from '../../api/mentorApi';
+import { getAllAppointments, getAnAppointment, requestAppointment } from '../../api/appointmentApi';
 import { Header, Sidebar, NotificationPanel, Footer, SidebarButton, Notification } from '../../components/ui/StudentUi.jsx';
+import { Formik, Form } from 'formik';
+import * as Yup from 'yup';
 
 const BookMentor = () => {
-    const [selectedSlotDate, setSelectedSlotDate] = useState(new Date());
+    const { id } = useParams();
+    const [mentorDetails, setMentorDetails] = useState(null);
+    const [selectedSlotDate, setSelectedSlotDate] = useState(null);
     const [selectedDate, setSelectedDate] = useState(new Date());
-    const [selectedTime, setSelectedTime] = useState(new Date());
+    const [selectedTime, setSelectedTime] = useState(null);
     const [meetingMethod, setMeetingMethod] = useState('GOOGLE MEET');
     const [note, setNote] = useState('');
     const [status, setStatus] = useState('');
     const [mentor, setMentor] = useState('');
     const [topic, setTopic] = useState('');
+    const [appointments, setAppointments] = useState([]);
+    const [matchingAppointments, setMatchingAppointments] = useState([]);
+    const [userCode, setUserCode] = useState('SE100001'); // TODO: Get from auth context
+    const [requestSuccess, setRequestSuccess] = useState(false);
+    const [requestError, setRequestError] = useState('');
 
-    const handleSlotDateChange = (date) => {
-        setSelectedSlotDate(date);
+    const initialValues = {
+        startTime: '',
+        endTime: '',
+        description: ''
     };
 
-    const handleDateChange = (date) => {
-        setSelectedDate(date);
+    const validationSchema = Yup.object({
+        startTime: Yup.date()
+            .required('Start time is required')
+            .min(new Date(), 'Start time must be in the future'),
+        endTime: Yup.date()
+            .required('End time is required')
+            .min(Yup.ref('startTime'), 'End time must be after start time'),
+        description: Yup.string()
+            .required('Description is required')
+    });
+
+    const handleSubmit = async (values, { setSubmitting, resetForm }) => {
+        try {
+            const formatTimeForApi = (dateString) => {
+                const date = new Date(dateString);
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                return `${year}-${month}-${day} ${hours}:${minutes}:00.0`;
+            };
+
+            const startTime = formatTimeForApi(values.startTime);
+            const endTime = formatTimeForApi(values.endTime);
+            
+            const response = await requestAppointment(
+                id,
+                userCode,
+                startTime,
+                endTime,
+                values.description
+            );
+
+            if (response.isSuccess) {
+                setRequestSuccess(true);
+                resetForm();
+                // Refresh appointments list
+                fetchAppointments();
+            } else {
+                setRequestError(response.message || 'Failed to request appointment');
+            }
+        } catch (error) {
+            setRequestError('An error occurred while requesting the appointment');
+        } finally {
+            setSubmitting(false);
+        }
     };
 
-    const handleTimeChange = (time) => {
-        setSelectedTime(time);
+    useEffect(() => {
+        const fetchMentorDetails = async () => {
+            try {
+                const response = await viewMentorDetails(id);
+                if (response.isSuccess) {
+                    setMentorDetails(response.result);
+                    setMentor(response.result.fullName); // Set mentor name in the form
+                }
+            } catch (error) {
+                console.error("Failed to fetch mentor details:", error);
+            }
+        };
+
+        if (id) {
+            fetchMentorDetails();
+        }
+    }, [id]);
+
+    useEffect(() => {
+        const fetchAppointments = async () => {
+            try {
+                const response = await getAllAppointments();
+                if (response.isSuccess) {
+                    setAppointments(response.result);
+                }
+            } catch (error) {
+                console.error("Failed to fetch appointments:", error);
+            }
+        };
+        fetchAppointments();
+    }, []);
+
+    useEffect(() => {
+        if (mentorDetails?.fullName && appointments.length > 0) {
+            const matched = appointments.filter(app => 
+                app.mentorName === mentorDetails.fullName
+            );
+            Promise.all(matched.map(async app => {
+                try {
+                    const details = await getAnAppointment(app.id);
+                    return details.isSuccess ? details.result : null;
+                } catch (error) {
+                    console.error("Failed to fetch appointment details:", error);
+                    return null;
+                }
+            })).then(detailedAppointments => {
+                setMatchingAppointments(detailedAppointments.filter(app => app !== null));
+            });
+        }
+    }, [mentorDetails?.fullName, appointments]);
+
+    const parseAvailableTime = (timeString) => {
+        const [start, end] = timeString.split(' - ');
+        return {
+            start: new Date(start),
+            end: new Date(end)
+        };
+    };
+
+    const formatDate = (date) => {
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+    };
+
+    const formatTime = (date) => {
+        return date.toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
+
+    const formatDateTime = (dateString) => {
+        const date = new Date(dateString);
+        return {
+            date: date.toLocaleDateString('en-GB'),
+            time: date.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            })
+        };
+    };
+
+    const formatToDateTime = (dateString) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+    };
+
+    const parseFromDateTime = (dateString) => {
+        if (!dateString) return '';
+        const [date, time] = dateString.split('T');
+        const [year, month, day] = date.split('-');
+        return `${day}/${month}/${year} ${time}`;
     };
 
     return (
@@ -39,112 +197,200 @@ const BookMentor = () => {
                         {/* Mentor Info */}
                         <div className="border rounded-lg bg-white p-4 flex flex-col items-center">
                             <h2 className="text-2xl font-bold">Mentor's Info</h2>
-                            <img src="https://placehold.co/100" alt="Mentor" className="w-24 h-24 rounded-full mt-3" />
-                            <p className="mt-3 font-bold">Nguyen Tram Phuc Duyen</p>
+                            <img src="/avatar_icon.png" alt="Mentor" className="w-24 h-24 rounded-full mt-3" />
+                            <p className="mt-3 font-bold">{mentorDetails?.fullName || 'Loading...'}</p>
                         </div>
 
                         {/* Available Slots */}
                         <div className="border rounded-lg bg-white p-4">
                             <h2 className="text-2xl font-bold">Available Slots</h2>
-                            <p className="mt-2 font-bold">Week 01</p>
-                            <div className="mt-3 space-y-5">
-                                <div className="flex items-start">
-                                    <div className="flex-grow mr-4">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                                        <DatePicker
-                                            selected={selectedSlotDate}
-                                            onChange={handleSlotDateChange}
-                                            className="p-2 border rounded w-full bg-orange-200"
-                                            dateFormat="MMMM d, yyyy"
-                                            minDate={new Date()}
-                                            placeholderText="Select a date"
-                                        />
+                            <div className="mt-3 space-y-2">
+                                {mentorDetails?.availableTimes?.map((timeSlot, index) => {
+                                    const { start, end } = parseAvailableTime(timeSlot);
+                                    return (
+                                        <div
+                                            key={index}
+                                            className={`p-3 border rounded cursor-pointer hover:bg-orange-100 
+                                                ${selectedSlotDate === timeSlot ? 'bg-orange-200' : 'bg-white'}`}
+                                            onClick={() => {
+                                                setSelectedSlotDate(timeSlot);
+                                                setSelectedDate(start);
+                                                setSelectedTime(start);
+                                            }}
+                                        >
+                                            <div className="font-medium">{formatDate(start)}</div>
+                                            <div className="text-gray-600">
+                                                {formatTime(start)} - {formatTime(end)}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                                {(!mentorDetails?.availableTimes || mentorDetails.availableTimes.length === 0) && (
+                                    <div className="text-center text-gray-500 py-4">
+                                        No available slots
                                     </div>
-                                    <div >
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                                        <DatePicker
-                                            selected={selectedTime}
-                                            onChange={handleTimeChange}
-                                            className="p-2 border rounded w-full bg-orange-200"
-                                            showTimeSelect
-                                            showTimeSelectOnly
-                                            timeIntervals={15}
-                                            timeCaption="Time"
-                                            dateFormat="h:mm aa"
-                                            placeholderText="Select time"
-                                        />
-                                    </div>
-                                </div>
-                                <button className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded w-full cursor-pointer"
-                                        onClick={() => {
-                                            setSelectedDate(selectedSlotDate);
-                                            setSelectedTime(selectedTime);
-                                        }}>
-                                    Select
-                                </button>
+                                )}
                             </div>
                         </div>
                     </div>
 
-                    {/* Details Appointment Section */}
+                    {/* Request Appointment Section */}
                     <div className="mt-6 border rounded-lg bg-white p-4">
-                        <h2 className="text-2xl font-bold text-center">Appointment Details</h2>
+                        <h2 className="text-2xl font-bold text-center mb-4">Request Appointment</h2>
+                        <Formik
+                            initialValues={initialValues}
+                            validationSchema={validationSchema}
+                            onSubmit={handleSubmit}
+                        >
+                            {({ errors, touched, isSubmitting, handleChange, handleBlur, values }) => (
+                                <Form className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div>
+                                            <label className="block font-bold mb-2">Start Time (DD/MM/YYYY HH:mm)</label>
+                                            <input
+                                                type="datetime-local"
+                                                name="startTime"
+                                                onChange={handleChange}
+                                                onBlur={handleBlur}
+                                                value={formatToDateTime(values.startTime)}
+                                                min={formatToDateTime(new Date())}
+                                                className="w-full p-2 border rounded"
+                                            />
+                                            {touched.startTime && errors.startTime && (
+                                                <div className="text-red-500 text-sm mt-1">
+                                                    {errors.startTime}
+                                                </div>
+                                            )}
+                                            {values.startTime && (
+                                                <div className="text-sm text-gray-600 mt-1">
+                                                    Selected: {parseFromDateTime(values.startTime)}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <label className="block font-bold mb-2">End Time (DD/MM/YYYY HH:mm)</label>
+                                            <input
+                                                type="datetime-local"
+                                                name="endTime"
+                                                onChange={handleChange}
+                                                onBlur={handleBlur}
+                                                value={formatToDateTime(values.endTime)}
+                                                min={formatToDateTime(values.startTime || new Date())}
+                                                className="w-full p-2 border rounded"
+                                            />
+                                            {touched.endTime && errors.endTime && (
+                                                <div className="text-red-500 text-sm mt-1">
+                                                    {errors.endTime}
+                                                </div>
+                                            )}
+                                            {values.endTime && (
+                                                <div className="text-sm text-gray-600 mt-1">
+                                                    Selected: {parseFromDateTime(values.endTime)}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block font-bold mb-2">Description</label>
+                                        <textarea
+                                            name="description"
+                                            onChange={handleChange}
+                                            onBlur={handleBlur}
+                                            value={values.description}
+                                            className="w-full p-2 border rounded h-24"
+                                        />
+                                        {errors.description && touched.description && (
+                                            <div className="text-red-500 text-sm mt-1">{errors.description}</div>
+                                        )}
+                                    </div>
+                                    {requestError && (
+                                        <div className="text-red-500 text-center">{requestError}</div>
+                                    )}
+                                    {requestSuccess && (
+                                        <div className="text-green-500 text-center">Appointment requested successfully!</div>
+                                    )}
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="submit"
+                                            disabled={isSubmitting}
+                                            className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded disabled:opacity-50"
+                                        >
+                                            {isSubmitting ? 'Requesting...' : 'Request Appointment'}
+                                        </button>
+                                    </div>
+                                </Form>
+                            )}
+                        </Formik>
+                    </div>
 
-                        <div className="grid grid-cols-2 gap-6 mt-4">
-                            {/* Left Column */}
-                            <div className="space-y-4">
-                                <div className="flex items-center space-x-4">
-                                    <label className="w-32 font-bold">Type</label>
-                                    <div className="p-2 border rounded bg-orange-200">
-                                        PENDING
+                    {/* Details Appointment Section */}
+                    <div className="mt-6">
+                        <h2 className="text-2xl font-bold text-center mb-4">Appointment Details</h2>
+                        {matchingAppointments.length > 0 ? (
+                            matchingAppointments.map((appointment, index) => (
+                                <div key={index} className="border rounded-lg bg-white p-4 mb-4">
+                                    <div className="grid grid-cols-2 gap-6">
+                                        {/* Left Column */}
+                                        <div className="space-y-4">
+                                            <div className="flex items-center space-x-4">
+                                                <label className="w-32 font-bold">Status</label>
+                                                <div className="p-2 border rounded bg-orange-200">
+                                                    {appointment.appointmentStatus}
+                                                </div>
+                                            </div>
+                                            <DetailRow
+                                                label="Mentor"
+                                                value={appointment.mentorName}
+                                                disabled
+                                                input
+                                            />
+                                            <DetailRow
+                                                label="Date"
+                                                value={formatDateTime(appointment.date).date}
+                                                highlight
+                                            />
+                                            <DetailRow
+                                                label="Time"
+                                                value={formatDateTime(appointment.date).time}
+                                                highlight
+                                            />
+                                        </div>
+
+                                        {/* Right Column */}
+                                        <div className="space-y-4">
+                                            <div className="flex items-center space-x-4">
+                                                <label className="font-bold">Meeting Method</label>
+                                                <select value={meetingMethod} onChange={(e) => setMeetingMethod(e.target.value)} className="p-2 border rounded bg-orange-200">
+                                                    <option>GOOGLE MEET</option>
+                                                    <option>ZOOM</option>
+                                                </select>
+                                            </div>
+                                            <DetailRow label="Meeting Link" value="https://meet.google.com/abc-xyza-bcl" link />
+                                            <DetailRow
+                                                label="Note"
+                                                value={appointment.description}
+                                                disabled
+                                                input
+                                            />
+                                            {appointment.appointmentStatus === 'REJECTED' && appointment.rejectionReason && (
+                                                <DetailRow
+                                                    label="Rejection Reason"
+                                                    value={appointment.rejectionReason}
+                                                    highlight
+                                                    className="text-red-600"
+                                                />
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                                <DetailRow 
-                                    label="Mentor" 
-                                    value={mentor} 
-                                    input 
-                                    onChange={(e) => setMentor(e.target.value)}
-                                />
-                                <DetailRow 
-                                    label="Date" 
-                                    value={selectedDate}
-                                    datePicker
-                                    onChange={handleDateChange}
-                                />
-                                <DetailRow 
-                                    label="Topic" 
-                                    value={topic} 
-                                    input 
-                                    onChange={(e) => setTopic(e.target.value)}
-                                />
-                            </div>
-
-                            {/* Right Column */}
-                            <div className="space-y-4">
-                                <div className="flex items-center space-x-4">
-                                    <label className="font-bold">Meeting Method</label>
-                                    <select value={meetingMethod} onChange={(e) => setMeetingMethod(e.target.value)} className="p-2 border rounded bg-orange-200">
-                                        <option>GOOGLE MEET</option>
-                                        <option>ZOOM</option>
-                                    </select>
-                                </div>
-                                <DetailRow label="Meeting Link" value="https://meet.google.com/abc-xyza-bcl" link />
-                                <DetailRow 
-                                    label="Note" 
-                                    value={note} 
-                                    input 
-                                    onChange={(e) => setNote(e.target.value)} 
-                                />
-                                <div className="flex justify-end">
-                                    <button className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded cursor-pointer">Book</button>
+                            ))
+                        ) : (
+                            <div className="border rounded-lg bg-white p-8">
+                                <div className="text-center text-gray-500 text-lg">
+                                    No appointments right now
                                 </div>
                             </div>
-                        </div>
-
-                        <div className="mt-4 text-center space-x-4">
-                            <button className="px-4 py-2 bg-gray-300 hover:bg-gray-400 rounded cursor-pointer">Clear</button>
-                            <button className="px-4 py-2 bg-gray-400 hover:bg-gray-500 text-white rounded cursor-pointer">Cancel</button>
-                        </div>
+                        )}
                     </div>
                 </div>
 
@@ -173,9 +419,9 @@ const DetailRow = ({ label, value, link, highlight, input, datePicker, onChange,
                 placeholderText="Select a date"
             />
         ) : input ? (
-            <input 
-                type="text" 
-                value={value} 
+            <input
+                type="text"
+                value={value}
                 onChange={onChange}
                 disabled={disabled}
                 placeholder={`Enter ${label.toLowerCase()} here`}

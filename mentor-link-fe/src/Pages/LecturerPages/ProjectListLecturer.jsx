@@ -1,11 +1,93 @@
 import React, { useState, useEffect } from "react";
 import { Header, Sidebar, Footer } from "../../components/ui/LecturerUi";
+import FilterComponents from "../../components/common/FilterComponents";
 import * as projectApi from "../../api/projectApi.js";
+import { useNavigate } from "react-router-dom";
+
+const FilterSearch = ({ filters, onFilterChange }) => (
+  <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+    <div className="flex gap-4 mb-4">
+      <FilterComponents.SearchBar
+        value={filters.topic}
+        onChange={(e) => onFilterChange("topic", e.target.value)}
+        placeholder="Search by topic..."
+      />
+      <FilterComponents.FilterDropdown>
+        <div className="grid grid-cols-2 gap-4">
+          <FilterComponents.FilterInput
+            label="Major"
+            type="text"
+            name="major"
+            value={filters.major}
+            onChange={(e) => onFilterChange("major", e.target.value)}
+            placeholder="Filter by major"
+          />
+          <FilterComponents.FilterInput
+            label="Semester"
+            type="text"
+            name="semester"
+            value={filters.semester}
+            onChange={(e) => onFilterChange("semester", e.target.value)}
+            placeholder="Filter by semester"
+          />
+          <FilterComponents.FilterInput
+            label="Status"
+            type="select"
+            name="status"
+            value={filters.status}
+            onChange={(e) => onFilterChange("status", e.target.value)}
+            options={["PENDING", "APPROVED", "REJECTED"]}
+          />
+        </div>
+      </FilterComponents.FilterDropdown>
+    </div>
+  </div>
+);
+
+const getStatusColor = (status) => {
+  switch (status) {
+    case 'PENDING': return 'bg-yellow-500';
+    case 'APPROVED': return 'bg-green-500';
+    case 'REJECTED': return 'bg-red-500';
+    default: return 'bg-gray-500';
+  }
+};
+
+const ProjectCard = ({ project }) => {
+  const navigate = useNavigate(); // Add this line at the top
+
+  return (
+    <div className="bg-orange-200 rounded-lg p-6 flex shadow-md  mb-4">
+      <img src="/fpt_logo_square.jpg" alt="Project" className="w-40 h-40 rounded-lg object-cover" />
+      <div className="ml-6 flex-1">
+        <div className="flex justify-between items-start">
+          <h3 className="text-2xl font-bold">{project.topic}</h3>
+          <span className={`px-3 py-1 text-white rounded-full ${getStatusColor(project.projectStatus)}`}>
+            {project.projectStatus}
+          </span>
+        </div>
+        <p className="mt-2">{project.description}</p>
+        <button 
+          className="mt-4 bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 cursor-pointer transition-colors duration-200"
+          onClick={() => navigate(`/project-detail-lecturer/${project.id}`)}
+        >
+          Detail
+        </button>
+      </div>
+    </div>
+  );
+};
 
 const ProjectListLecturer = () => {
   const [projects, setProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [filters, setFilters] = useState({
+    topic: "",
+    major: "",
+    semester: "",
+    status: "",
+  });
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -24,6 +106,13 @@ const ProjectListLecturer = () => {
     fetchProjects();
   }, []);
 
+  const handleFilterChange = (name, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
   if (error) {
     return <div className="text-center text-red-500">{error}</div>;
   }
@@ -33,60 +122,28 @@ const ProjectListLecturer = () => {
       <Header />
       <div className="flex flex-1">
         <Sidebar />
-        <div className="flex-grow p-8 ">
+        <main className="flex-1 p-8">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-4xl font-bold">PROJECT LIST</h1>
+            <h1 className="text-3xl font-bold">PROJECT LIST</h1>
             <span className="text-lg">Total Projects: {projects?.length || 0}</span>
           </div>
-          <div className="bg-orange-200 p-4 rounded-lg mb-6">
-            <h2 className="text-lg font-bold">Filter</h2>
-            <div className="mt-2 flex gap-2 ">
-              <input type="text" placeholder="Major" className="p-2 rounded bg-white" />
-              <input type="text" placeholder="Semester" className="p-2 rounded bg-white" />
-              <input type="text" placeholder="Status" className="p-2 rounded bg-white" />
-            </div>
-          </div>
+          <FilterSearch filters={filters} onFilterChange={handleFilterChange} />
           {isLoading ? (
             <div className="text-center">Loading projects...</div>
           ) : (
             Array.isArray(projects) && projects.length > 0 ? (
-              projects.map((project) => (
-                <ProjectCard key={project.id} project={project} />
-              ))
+              <div className="space-y-4">
+                {projects.map((project) => (
+                  <ProjectCard key={project.id} project={project} />
+                ))}
+              </div>
             ) : (
               <div className="text-center">No projects found</div>
             )
           )}
-        </div>
+        </main>
       </div>
       <Footer />
-    </div>
-  );
-};
-
-const ProjectCard = ({ project }) => {
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'PENDING': return 'bg-yellow-500';
-      case 'APPROVED': return 'bg-green-500';
-      case 'REJECTED': return 'bg-red-500';
-      default: return 'bg-gray-500';
-    }
-  };
-
-  return (
-    <div className="flex bg-orange-200 rounded-lg p-4 mb-4 h-70">
-      <img src="/placeholder.jpg" alt="Project" className="w-1/3 rounded-lg" />
-      <div className="ml-4 flex-grow">
-        <div className="flex justify-between items-start">
-          <h3 className="text-2xl font-bold">{project.topic}</h3>
-          <span className={`px-2 py-1 text-white rounded-full text-sm ${getStatusColor(project.projectStatus)}`}>
-            {project.projectStatus}
-          </span>
-        </div>
-        <p className="mt-2">{project.description}</p>
-        <button className="mt-2 bg-orange-500 text-white rounded px-4 py-2">Detail</button>
-      </div>
     </div>
   );
 };

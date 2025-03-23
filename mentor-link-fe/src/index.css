@@ -1,1 +1,32 @@
 @import "tailwindcss";
+
+/* FullCalendar custom styles */
+.fc-custom-view.fc {
+    border-radius: 0.5rem;
+    background-color: white;
+    padding: 1rem;
+}
+
+.fc-custom-view .fc-toolbar-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.fc-custom-view .fc-button {
+    background-color: #3b82f6;
+    border: none;
+    text-transform: capitalize;
+    padding: 0.5rem 1rem;
+}
+
+.fc-custom-view .fc-button:hover {
+    background-color: #2563eb;
+}
+
+.fc-custom-view .fc-event {
+    background-color: #3b82f6;
+    border: none;
+    border-radius: 0.25rem;
+    padding: 0.25rem;
+}
+

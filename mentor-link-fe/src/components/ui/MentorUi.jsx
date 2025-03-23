@@ -95,10 +95,13 @@ export const Sidebar = () => {
     const navigate = useNavigate();
     return (
         <div className="w-1/7 bg-white p-4 text-white space-y-8">
-            <SidebarButton icon={<HomeIcon />} label="Home" onClick={() => navigate('/home-lecturer')} />
-            <SidebarButton icon={<AssignmentIcon />} label="Project List" onClick={() => navigate('/project-list-lecturer')} />
-            <SidebarButton icon={<GroupIcon />} label="Chat"  />
-            <SidebarButton icon={<CalendarMonthIcon />} label="Report"  onClick={() => navigate('/report-lecturer')}/*onClick={() => navigate('/home-lecturer')}*/ />
+            <SidebarButton icon={<HomeIcon />} label="Home" onClick={() => navigate('/')} />
+            <SidebarButton icon={<PersonIcon />} label="Project" onClick={() => navigate('/project-management')} />
+            <SidebarButton icon={<GroupIcon />} label="Mentors" onClick={() => navigate('/mentor-list')} />
+            <SidebarButton icon={<CalendarMonthIcon />} label="Appointment" onClick={() => navigate('/appointment-management')} />
+            <SidebarButton icon={<AccessTimeIcon />} label="Deadline" onClick={() => navigate('/deadline-student')} />
+            <SidebarButton icon={<AccountBalanceWalletIcon />} label="Wallet" onClick={() => navigate('/wallet-student')} />
+            <SidebarButton icon={<ChatIcon />} label="Chat" />
         </div>
     );
 };

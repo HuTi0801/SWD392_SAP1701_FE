@@ -2,21 +2,27 @@ import React, { useState, useEffect } from "react";
 import { Header, Sidebar, Footer } from "../../components/ui/LecturerUi";
 import { useNavigate } from "react-router-dom";
 import * as projectApi from "../../api/projectApi.js";
+import { useAuth } from "../../context/AuthContext"; // Add this import
 
 const HomeLecturer = () => {
+    console.log("HomeLecturer rendering"); // Debug render
+    const { auth } = useAuth();
     const navigate = useNavigate();
     const [projects, setProjects] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
+        console.log("HomeLecturer useEffect, auth:", auth); // Debug auth state
         const fetchProjects = async () => {
             try {
+                console.log("Fetching projects..."); // Debug fetch
                 const response = await projectApi.getAllProjectsLecturer();
+                console.log("Projects response:", response); // Debug response
                 const projectsArray = response?.result || [];
                 setProjects(projectsArray.slice(0, 3)); // Only take first 3 projects
             } catch (error) {
-                console.error("Failed to fetch projects:", error);
+                console.error("Error fetching projects:", error); // Debug error
                 setError("Failed to load projects");
             } finally {
                 setIsLoading(false);
@@ -70,7 +76,11 @@ const HomeLecturer = () => {
 const ProjectCard = ({ project, navigate }) => (
     <div className="bg-white rounded-lg overflow-hidden shadow-lg">
         <div className="h-100 bg-gray-300 flex justify-center items-center">
-            <span className="text-lg font-semibold">Project Image</span>
+            <img 
+                src="/fpt_logo_vert.png" 
+                alt="FPT Logo"
+                className="h-full w-auto object-cover"
+            />
         </div>
         <div className="p-6 bg-orange-200 min-h-[250px] flex flex-col justify-between">
             <div>
@@ -78,7 +88,7 @@ const ProjectCard = ({ project, navigate }) => (
                 <p className="text-gray-700 italic">{project.description}</p>
             </div>
             <button
-                onClick={() => navigate(`/project-detail-lecturer`)}
+                onClick={() => navigate(`/project-detail-lecturer/${project.id}`)}
                 className="mt-4 bg-orange-400 hover:bg-orange-500 transition-colors duration-200 text-white px-4 py-2 rounded-lg cursor-pointer"
             >
                 Detail

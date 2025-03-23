@@ -1,16 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header, Sidebar, NotificationPanel, Footer, SidebarButton, Notification } from '../../components/ui/StudentUi.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
+import { logout as logoutApi } from '../../api/accountApi';
+import { useNavigate } from 'react-router-dom';
 
 const StudentInfo = () => {
     const [phone, setPhone] = useState('0944949152');
     const [email, setEmail] = useState('quynhpnse172xxx@fpt.edu.vn');
+    const { auth, logout } = useAuth();
+    const navigate = useNavigate();
+    
+    useEffect(() => {
+        const userInfo = localStorage.getItem('auth');
+        console.log('User Information from localStorage:', JSON.parse(userInfo));
+    }, []);
 
-    const handlePhoneUpdate = () => {
-        alert(`Updated Phone: ${phone}`);
+    const handlePhoneUpdate = async () => {
+        try {
+            // TODO: Add API call to update phone
+            alert(`Phone number updated successfully to: ${phone}`);
+        } catch (error) {
+            console.error('Failed to update phone:', error);
+            alert('Failed to update phone number');
+        }
     };
 
-    const handleEmailUpdate = () => {
-        alert(`Updated Email: ${email}`);
+    const handleEmailUpdate = async () => {
+        try {
+            // TODO: Add API call to update email
+            alert(`Email updated successfully to: ${email}`);
+        } catch (error) {
+            console.error('Failed to update email:', error);
+            alert('Failed to update email');
+        }
+    };
+
+    const handleLogout = async () => {
+        try {
+            await logoutApi(auth.result.token);
+            logout();
+            navigate('/login');
+        } catch (error) {
+            console.error('Logout failed:', error);
+        }
     };
 
     return (
@@ -51,6 +83,12 @@ const StudentInfo = () => {
                     <div className="mt-6 flex space-x-4 justify-center">
                         <button className="px-6 py-2 bg-green-500 text-white rounded">Save</button>
                         <button className="px-6 py-2 bg-green-500 text-white rounded">Apply the Mentor position</button>
+                        <button 
+                            onClick={handleLogout}
+                            className="px-6 py-2 bg-red-500 text-white rounded"
+                        >
+                            Logout
+                        </button>
                     </div>
                 </div>
 

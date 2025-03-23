@@ -16,7 +16,7 @@ const ErrorMessage = ({ message, details }) => (
   <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
     <div className="flex items-center">
       <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
       </svg>
       <p className="font-bold">System Error</p>
     </div>
@@ -37,39 +37,45 @@ const Login = () => {
   const { login: authLogin } = useAuth();
   const navigate = useNavigate();
 
+  const handleLoginSuccess = (response) => {
+    authLogin(response);
+
+    // Get user roles from response
+    const userRoles = response.result.role.replace('[', '').replace(']', '').split(', ');
+
+    // Redirect based on role
+    if (userRoles.includes('ROLE_STUDENT')) {
+      navigate('/');
+    } else if (userRoles.includes('ROLE_MENTOR')) {
+      navigate('/appointment-list-mentor');
+    } else if (userRoles.includes('ROLE_LECTURE')) {
+      navigate('/home-lecturer');
+    }
+
+  };
+
   const handleSubmit = async (values, { setStatus, setSubmitting }) => {
     try {
       const response = await login(values.username, values.password);
-      console.log('API Response:', response.result); // Log full response
+      console.log('API Response:', response); // Log full response
 
       if (response && response.isSuccess) {
-        const result = response.result;
-        if (result) {
-          console.log('Login successful:', result);
-          const authData = {
-            token: result.token,
-            user: {
-              username: result.username,
-              role: result.role,
-              accountId: result.accountId,
-              userCode: result.userCode
-            }
-          };
-          authLogin(authData);
-          navigate('/');
+        if (response.result) {
+          console.log('Login successful:', response.result);
+          handleLoginSuccess(response); // Pass the entire response
         } else {
           console.error('Invalid response structure:', response);
           throw new Error('Invalid response data structure');
         }
       } else {
         console.error('Login failed:', response?.message);
-        throw new Error(response?.data?.message || 'Login failed');
+        throw new Error(response?.message || 'Login failed');
       }
     } catch (err) {
       console.group('Login Error Details');
       console.error('Error object:', err);
       console.error('Stack trace:', err.stack);
-      
+
       let errorMessage;
       if (err.response) {
         console.error('API Error Response:', {
@@ -123,14 +129,14 @@ const Login = () => {
   };
 
   return (
-    <div className="relative flex justify-center items-center h-screen bg-cover bg-center before:content-[''] before:absolute before:inset-0 before:backdrop-blur-sm" 
-      style={{ 
+    <div className="relative flex justify-center items-center h-screen bg-cover bg-center before:content-[''] before:absolute before:inset-0 before:backdrop-blur-sm"
+      style={{
         backgroundImage: "url('/login.jpg')",
         backgroundSize: '100% 100%'
       }}>
       <div className="relative bg-white/10 p-8 rounded-lg shadow-lg backdrop-blur-lg w-96 border border-white/20">
         <h2 className="text-3xl font-semibold text-center mb-6 text-black">LOGIN</h2>
-        
+
         <Formik
           initialValues={{ username: '', password: '' }}
           validationSchema={validationSchema}
@@ -141,7 +147,7 @@ const Login = () => {
               {status && status.type === 'system' && (
                 <ErrorMessage message={status.message} details={status.details} />
               )}
-              
+
               <div className="mb-4">
                 <label className="block text-black font-medium mb-2">Username</label>
                 <div className="flex items-center border rounded-md bg-white px-3">
@@ -178,10 +184,10 @@ const Login = () => {
                 <a href="#" className="text-black text-sm">Forgot Password?</a>
               </div>
 
-              <button 
+              <button
                 type="submit"
                 disabled={isSubmitting}
-                className={`w-full bg-orange-500 text-white py-2 rounded-md transition
+                className={`w-full bg-orange-500 text-white py-2 rounded-md transition cursor-pointer
                   ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-orange-600'}`}
               >
                 {isSubmitting ? 'Logging in...' : 'Login'}

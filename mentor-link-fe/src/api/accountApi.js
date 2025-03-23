@@ -17,3 +17,20 @@ export const login = async (username, password) => {
         throw error;
     }
 }
+
+export const logout = async (authorization) => {
+    try {
+        const response = await axiosInstance.post(`account/logout`, {}, {
+            headers: {
+                'accept': '*/*',
+                'Authorization': `Bearer ${authorization}`
+            }
+        });
+        return response.data;
+    }
+    catch (error) {
+        console.error("API ERROR: ", error);
+        throw error;
+    }
+}
+

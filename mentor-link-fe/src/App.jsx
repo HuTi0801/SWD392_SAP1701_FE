@@ -20,6 +20,7 @@ import MentorList from './Pages/StudentPages/MentorList';
 // ------------ Mentor Pages -----------------
 import AppointmentListMentor from './Pages/MentorPages/AppointmentListMentor';
 import AppointmentDetailMentor from './Pages/MentorPages/AppointmentDetailMentor';
+import WeeklyReportMentor from './Pages/MentorPages/WeeklyReportMentor';
 // -------------------------------------------
 // ------------ Lecturer Pages ---------------
 import HomeLecturer from './Pages/LecturerPages/HomeLecturer';
@@ -51,6 +52,8 @@ function App() {
             {/* Mentor Routes */}
             <Route path="/appointment-list-mentor" element={<PrivateRoute element={<AppointmentListMentor />} allowedRoles={['mentor']} />} />
             <Route path="/appointment-detail-mentor/:id" element={<PrivateRoute element={<AppointmentDetailMentor />} allowedRoles={['mentor']} />} />
+            <Route path="/weekly-report-mentor" element={<PrivateRoute element={<WeeklyReportMentor />} allowedRoles={['mentor']} />} />
+
             {/* Lecturer Routes */}
             <Route path="/home-lecturer" element={<PrivateRoute element={<HomeLecturer />} allowedRoles={['lecturer']} />} />
             <Route path="/project-list-lecturer" element={<PrivateRoute element={<ProjectListLecturer />} allowedRoles={['lecturer']} />} />

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Header, Sidebar, Footer } from '../../components/ui/MentorUi';
+import { Header, Sidebar, Footer, NotificationPanel } from '../../components/ui/MentorUi';
 import * as appointmentApi from '../../api/appointmentApi';
+import * as notificationApi from '../../api/notificationApi';
 import { useAuth } from '../../context/AuthContext';
 
 const AppointmentDetailMentor = () => {
@@ -64,6 +65,18 @@ const AppointmentDetailMentor = () => {
                 setUpdateMessage(response.message);
                 setRejectReason('');
                 setSelectedStatus('');
+
+                // Send notification to student after successful status update
+                try {
+                    const appointmentDetails = await appointmentApi.getAnAppointment(id);
+                    if (appointmentDetails.isSuccess) {
+                        const studentId = appointmentDetails.result.userCode;
+                        const notificationResponse = await notificationApi.sendNotifAppointmentStudent(id, studentId);
+                        console.log('Notification sent to student:', notificationResponse);
+                    }
+                } catch (notifError) {
+                    console.error('Error sending notification:', notifError);
+                }
             } else {
                 console.error('Status update failed:', response.message);
                 setUpdateMessage(response.message || 'Failed to update status');
@@ -160,6 +173,7 @@ const AppointmentDetailMentor = () => {
                         )}
                     </div>
                 </main>
+                <NotificationPanel />
             </div>
             <Footer />
         </div>

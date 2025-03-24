@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Header, Sidebar, Footer } from "../../components/ui/LecturerUi";
+import { Header, Sidebar, Footer, NotificationPanel } from "../../components/ui/LecturerUi";
 import FilterComponents from "../../components/common/FilterComponents";
 import * as projectApi from "../../api/projectApi.js";
 import { useNavigate } from "react-router-dom";
@@ -142,6 +142,7 @@ const ProjectListLecturer = () => {
             )
           )}
         </main>
+        <NotificationPanel />
       </div>
       <Footer />
     </div>

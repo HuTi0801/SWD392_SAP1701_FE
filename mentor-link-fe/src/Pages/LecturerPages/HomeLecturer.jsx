@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Header, Sidebar, Footer } from "../../components/ui/LecturerUi";
+import { Header, Sidebar, Footer, NotificationPanel } from "../../components/ui/LecturerUi";
 import { useNavigate } from "react-router-dom";
 import * as projectApi from "../../api/projectApi.js";
 import { useAuth } from "../../context/AuthContext"; // Add this import
@@ -67,6 +67,7 @@ const HomeLecturer = () => {
                         </>
                     )}
                 </main>
+                <NotificationPanel />
             </div>
             <Footer />
         </div>

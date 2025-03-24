@@ -51,9 +51,6 @@ const HomeStudent = () => {
             <div className="flex-1 ml-4">
                 <h3 className="text-2xl font-bold text-[#FF9E6D]">{project.topic}</h3>
                 <p className="text-sm text-gray-600">{project.description}</p>
-                <div className="flex justify-between items-center mt-4">
-                    <button className="px-4 py-2 bg-[#FF9E6D] text-white rounded hover:bg-[#FF7043] cursor-pointer">Detail</button>
-                </div>
             </div>
         </div>
     );

@@ -12,6 +12,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import { useAuth } from '../../context/AuthContext';
 import { logout as logoutApi } from '../../api/accountApi';
+import { getNotifByAccountId, updateStatusNotif } from '../../api/notificationApi';
 
 export const SidebarButton = ({ icon, label, onClick }) => (
     <button
@@ -40,8 +41,12 @@ export const DeadlineItem = ({ title, date }) => (
     </div>
 );
 
-export const Notification = () => {
+export const Notification = ({ notification, onConfirm }) => {
     const [isOpen, setIsOpen] = useState(false);
+
+    const handleConfirm = async () => {
+        await onConfirm(notification.id);
+    };
 
     return (
         <div className="p-3 bg-white shadow rounded">
@@ -50,8 +55,13 @@ export const Notification = () => {
             </button>
             {isOpen && (
                 <div>
-                    <p className="text-gray-600 text-sm">Body text.</p>
-                    <button className="mt-1 px-3 py-1 bg-gray-200 text-gray-700 rounded cursor-pointer">Confirmed</button>
+                    <p className="text-gray-600 text-sm">{notification.content}</p>
+                    <button 
+                        onClick={handleConfirm}
+                        className="mt-1 px-3 py-1 bg-gray-200 text-gray-700 rounded cursor-pointer hover:bg-gray-300"
+                    >
+                        Confirm
+                    </button>
                 </div>
             )}
         </div>
@@ -105,6 +115,36 @@ export const Sidebar = () => {
 
 export const NotificationPanel = () => {
     const [isOpen, setIsOpen] = useState(false);
+    const [notifications, setNotifications] = useState([]);
+    const { auth } = useAuth();
+
+    const fetchNotifications = async () => {
+        if (isOpen && auth?.result?.accountId) {
+            try {
+                const data = await getNotifByAccountId(auth.result.accountId);
+                if (Array.isArray(data)) {
+                    const unreadNotifications = data.filter(notif => notif.notificationStatus === "UNREAD");
+                    setNotifications(unreadNotifications);
+                }
+            } catch (error) {
+                console.error('Failed to fetch notifications:', error);
+                setNotifications([]);
+            }
+        }
+    };
+
+    const handleConfirm = async (notificationId) => {
+        try {
+            await updateStatusNotif(notificationId);
+            await fetchNotifications();
+        } catch (error) {
+            console.error('Failed to update notification status:', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchNotifications();
+    }, [isOpen, auth?.result?.accountId]);
 
     return (
         <div className="fixed right-0 top-0 h-full flex z-50" style={{ right: '0px' }}>
@@ -123,10 +163,13 @@ export const NotificationPanel = () => {
                         <NotificationsIcon />
                     </button>
                 </div>
-                <Notification />
-                <Notification />
-                <Notification />
-                <Notification />
+                {notifications.map((notification) => (
+                    <Notification 
+                        key={notification.id} 
+                        notification={notification}
+                        onConfirm={handleConfirm}
+                    />
+                ))}
             </div>
         </div>
     );

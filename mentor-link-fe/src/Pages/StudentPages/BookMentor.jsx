@@ -21,31 +21,29 @@ const BookMentor = () => {
     const [topic, setTopic] = useState('');
     const [appointments, setAppointments] = useState([]);
     const [matchingAppointments, setMatchingAppointments] = useState([]);
-    const [userCode, setUserCode] = useState('SE100001'); // TODO: Get from auth context
+    const [userCode, setUserCode] = useState('SE100001');
     const [requestSuccess, setRequestSuccess] = useState(false);
     const [requestError, setRequestError] = useState('');
 
     const initialValues = {
-        startTime: '',
-        endTime: '',
         description: ''
     };
 
     const validationSchema = Yup.object({
-        startTime: Yup.date()
-            .required('Start time is required')
-            .min(new Date(), 'Start time must be in the future'),
-        endTime: Yup.date()
-            .required('End time is required')
-            .min(Yup.ref('startTime'), 'End time must be after start time'),
         description: Yup.string()
             .required('Description is required')
     });
 
     const handleSubmit = async (values, { setSubmitting, resetForm }) => {
         try {
-            const formatTimeForApi = (dateString) => {
-                const date = new Date(dateString);
+            if (!selectedSlotDate) {
+                setRequestError('Please select a time slot first');
+                return;
+            }
+
+            const { start, end } = parseAvailableTime(selectedSlotDate);
+            
+            const formatTimeForApi = (date) => {
                 const year = date.getFullYear();
                 const month = String(date.getMonth() + 1).padStart(2, '0');
                 const day = String(date.getDate()).padStart(2, '0');
@@ -54,21 +52,18 @@ const BookMentor = () => {
                 return `${year}-${month}-${day} ${hours}:${minutes}:00.0`;
             };
 
-            const startTime = formatTimeForApi(values.startTime);
-            const endTime = formatTimeForApi(values.endTime);
-            
             const response = await requestAppointment(
                 id,
                 userCode,
-                startTime,
-                endTime,
+                formatTimeForApi(start),
+                formatTimeForApi(end),
                 values.description
             );
 
             if (response.isSuccess) {
                 setRequestSuccess(true);
                 resetForm();
-                // Refresh appointments list
+                setSelectedSlotDate(null);
                 fetchAppointments();
             } else {
                 setRequestError(response.message || 'Failed to request appointment');
@@ -86,7 +81,7 @@ const BookMentor = () => {
                 const response = await viewMentorDetails(id);
                 if (response.isSuccess) {
                     setMentorDetails(response.result);
-                    setMentor(response.result.fullName); // Set mentor name in the form
+                    setMentor(response.result.fullName);
                 }
             } catch (error) {
                 console.error("Failed to fetch mentor details:", error);
@@ -130,6 +125,20 @@ const BookMentor = () => {
             });
         }
     }, [mentorDetails?.fullName, appointments]);
+
+    useEffect(() => {
+        let reloadTimeout;
+        if (requestSuccess) {
+            reloadTimeout = setTimeout(() => {
+                window.location.reload();
+            }, 1000); 
+        }
+        return () => {
+            if (reloadTimeout) {
+                clearTimeout(reloadTimeout);
+            }
+        };
+    }, [requestSuccess]);
 
     const parseAvailableTime = (timeString) => {
         const [start, end] = timeString.split(' - ');
@@ -244,51 +253,17 @@ const BookMentor = () => {
                         >
                             {({ errors, touched, isSubmitting, handleChange, handleBlur, values }) => (
                                 <Form className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-6">
-                                        <div>
-                                            <label className="block font-bold mb-2">Start Time (DD/MM/YYYY HH:mm)</label>
-                                            <input
-                                                type="datetime-local"
-                                                name="startTime"
-                                                onChange={handleChange}
-                                                onBlur={handleBlur}
-                                                value={formatToDateTime(values.startTime)}
-                                                min={formatToDateTime(new Date())}
-                                                className="w-full p-2 border rounded"
-                                            />
-                                            {touched.startTime && errors.startTime && (
-                                                <div className="text-red-500 text-sm mt-1">
-                                                    {errors.startTime}
-                                                </div>
-                                            )}
-                                            {values.startTime && (
-                                                <div className="text-sm text-gray-600 mt-1">
-                                                    Selected: {parseFromDateTime(values.startTime)}
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div>
-                                            <label className="block font-bold mb-2">End Time (DD/MM/YYYY HH:mm)</label>
-                                            <input
-                                                type="datetime-local"
-                                                name="endTime"
-                                                onChange={handleChange}
-                                                onBlur={handleBlur}
-                                                value={formatToDateTime(values.endTime)}
-                                                min={formatToDateTime(values.startTime || new Date())}
-                                                className="w-full p-2 border rounded"
-                                            />
-                                            {touched.endTime && errors.endTime && (
-                                                <div className="text-red-500 text-sm mt-1">
-                                                    {errors.endTime}
-                                                </div>
-                                            )}
-                                            {values.endTime && (
-                                                <div className="text-sm text-gray-600 mt-1">
-                                                    Selected: {parseFromDateTime(values.endTime)}
-                                                </div>
-                                            )}
-                                        </div>
+                                    <div className="mb-4">
+                                        <label className="block font-bold mb-2">Selected Time Slot</label>
+                                        {selectedSlotDate ? (
+                                            <div className="p-3 bg-orange-100 rounded">
+                                                {selectedSlotDate}
+                                            </div>
+                                        ) : (
+                                            <div className="p-3 bg-gray-100 rounded text-gray-500">
+                                                Please select a time slot from available slots above
+                                            </div>
+                                        )}
                                     </div>
                                     <div>
                                         <label className="block font-bold mb-2">Description</label>
@@ -298,6 +273,7 @@ const BookMentor = () => {
                                             onBlur={handleBlur}
                                             value={values.description}
                                             className="w-full p-2 border rounded h-24"
+                                            placeholder="Enter your meeting description here..."
                                         />
                                         {errors.description && touched.description && (
                                             <div className="text-red-500 text-sm mt-1">{errors.description}</div>
@@ -312,7 +288,7 @@ const BookMentor = () => {
                                     <div className="flex justify-end">
                                         <button
                                             type="submit"
-                                            disabled={isSubmitting}
+                                            disabled={isSubmitting || !selectedSlotDate}
                                             className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded disabled:opacity-50"
                                         >
                                             {isSubmitting ? 'Requesting...' : 'Request Appointment'}

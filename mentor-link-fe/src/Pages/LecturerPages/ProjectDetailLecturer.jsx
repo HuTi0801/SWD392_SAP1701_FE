@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Header, Sidebar, Footer } from '../../components/ui/LecturerUi';
+import { Header, Sidebar, Footer, NotificationPanel } from '../../components/ui/LecturerUi';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { useAuth } from '../../context/AuthContext';
 import * as projectApi from '../../api/projectApi';
@@ -165,6 +165,7 @@ const ProjectDetailLecturer = () => {
                         </div>
                     )}
                 </main>
+                <NotificationPanel />
             </div>
             <Footer />
         </div>

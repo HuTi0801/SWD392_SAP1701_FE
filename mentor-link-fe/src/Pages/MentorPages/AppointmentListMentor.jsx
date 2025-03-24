@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Header, Sidebar, Footer } from '../../components/ui/MentorUi';
+import { Header, Sidebar, Footer, NotificationPanel } from '../../components/ui/MentorUi';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
@@ -50,18 +50,6 @@ const AppointmentListMentor = () => {
         }
     }, [auth]);
 
-    const handleDateSelect = (selectInfo) => {
-        const title = prompt('Please enter appointment title');
-        if (title) {
-            const newEvent = {
-                title,
-                start: selectInfo.startStr,
-                end: selectInfo.endStr,
-            };
-            setEvents([...events, newEvent]);
-        }
-    };
-
     const handleEventClick = (clickInfo) => {
         const appointmentId = clickInfo.event.id;
         navigate(`/appointment-detail-mentor/${appointmentId}`);
@@ -84,10 +72,9 @@ const AppointmentListMentor = () => {
                                 right: 'dayGridMonth'
                             }}
                             initialView="dayGridMonth"
-                            selectable={true}
-                            editable={true}
+                            selectable={false}
+                            editable={false}
                             events={events}
-                            select={handleDateSelect}
                             eventClick={handleEventClick}
                             height="auto"
                             className="rounded-lg overflow-hidden [&.fc]:bg-white [&.fc]:rounded-lg [&.fc]:p-4 
@@ -98,6 +85,7 @@ const AppointmentListMentor = () => {
                         />
                     </div>
                 </main>
+                <NotificationPanel />
             </div>
             <Footer />
         </div>

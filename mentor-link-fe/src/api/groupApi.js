@@ -19,13 +19,9 @@ export const createGroup = async (groupData, token) => {
     }
 }
 
-export const getGroupInfoById = async (id, token) => {
+export const getGroupInfoById = async (id) => {
     try {
-        const response = await axiosInstance.get(`get-group-information-by/${id}`, {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        });
+        const response = await axiosInstance.get(`get-group-information-by/${id}`);
         return response.data;
     }
     catch (error) {

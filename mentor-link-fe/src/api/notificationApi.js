@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const baseURL = 'http://localhost:8080/auth/v1/notification/';
-const axiosInstance = axios.create({baseURL});
+const axiosInstance = axios.create({ baseURL });
 
 export const updateStatusNotif = async (notificationId) => {
     try {
@@ -17,6 +17,28 @@ export const updateStatusNotif = async (notificationId) => {
 export const sendNotifMentorLecturer = async () => {
     try {
         const response = await axiosInstance.post('system/send-notifi-proj');
+        return response.data.result;
+    }
+    catch (error) {
+        console.error("API ERROR: ", error);
+        throw error;
+    }
+}
+
+export const sendNotifProjectStudent = async (userCode) => {
+    try {
+        const response = await axiosInstance.post(`system/send-notifi-project-to-student?userCode=${userCode}`);
+        return response.data.result;
+    }
+    catch (error) {
+        console.error("API ERROR: ", error);
+        throw error;
+    }
+}
+
+export const sendNotifProjectGroup = async (groupId) => {
+    try {
+        const response = await axiosInstance.post(`system/send-notifi-project-to-group?groupId=${groupId}`);
         return response.data.result;
     }
     catch (error) {

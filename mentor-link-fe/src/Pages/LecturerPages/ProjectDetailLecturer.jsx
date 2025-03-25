@@ -4,6 +4,7 @@ import { Header, Sidebar, Footer, NotificationPanel } from '../../components/ui/
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { useAuth } from '../../context/AuthContext';
 import * as projectApi from '../../api/projectApi';
+import * as notificationApi from '../../api/notificationApi';
 
 const ProjectDetailLecturer = () => {
     const { id } = useParams();
@@ -46,6 +47,17 @@ const ProjectDetailLecturer = () => {
             );
             
             if (response.isSuccess) {
+                // Send notification to group
+                const groupNotifResponse = await notificationApi.sendNotifProjectGroup(id);
+                console.log('Group notification response:', groupNotifResponse);
+
+                // Send notifications to each member
+                const members = groupNotifResponse.groupInfo.members;
+                for (const member of members) {
+                    const studentNotifResponse = await notificationApi.sendNotifProjectStudent(member.userCode);
+                    console.log(`Student notification response for ${member.userCode}:`, studentNotifResponse);
+                }
+
                 // Refresh project data
                 setProject({
                     ...project,
@@ -76,6 +88,17 @@ const ProjectDetailLecturer = () => {
             );
             
             if (response.isSuccess) {
+                // Send notification to group
+                const groupNotifResponse = await notificationApi.sendNotifProjectGroup(id);
+                console.log('Group notification response:', groupNotifResponse);
+
+                // Send notifications to each member
+                const members = groupNotifResponse.groupInfo.members;
+                for (const member of members) {
+                    const studentNotifResponse = await notificationApi.sendNotifProjectStudent(member.userCode);
+                    console.log(`Student notification response for ${member.userCode}:`, studentNotifResponse);
+                }
+
                 // Refresh project data
                 setProject({
                     ...project,

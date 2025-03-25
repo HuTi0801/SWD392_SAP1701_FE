@@ -69,7 +69,7 @@ const BookMentor = () => {
                 setRequestError(response.message || 'Failed to request appointment');
             }
         } catch (error) {
-            setRequestError('An error occurred while requesting the appointment');
+            console.log('An error occurred while requesting the appointment');
         } finally {
             setSubmitting(false);
         }
